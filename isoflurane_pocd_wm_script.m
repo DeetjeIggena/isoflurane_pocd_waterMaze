@@ -15,7 +15,6 @@
 %          output-tables report the following measures:
 
 % @author D.Iggena (deetje.iggena@charite.de), @date: 02.05.2022
-% @last update 16.10.2022:
 
 clear; close all; clc; format compact;
 tic
