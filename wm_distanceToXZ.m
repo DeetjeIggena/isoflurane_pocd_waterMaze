@@ -2,9 +2,9 @@
 
 % input: x-&z-coordinates, location-coordinates
 % output: absolute distance to location (int), averaged distance to
-% location
+% location, vector with distances
 
-function [distance_abs,distance_rel]= wm_distanceToXZ(xCoordinates,...
+function [distance_abs,distance_rel,distPerSample]= wm_distanceToXZ(xCoordinates,...
     zCoordinates, location_x, location_z)
 
 nSamples        = length(xCoordinates);
