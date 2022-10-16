@@ -175,37 +175,6 @@ for i = 1:length(foldercontent)
     [ wm(n).heading_error,  wm(n).path_efficiency, ~]    = ...
         wm_pathEfficiency(x, y, gx, gy);
     
-    % zone/quadrant analysis
-    area = data.i_reg; % get zone-information
-    
-    % get the number of coordinates spent in the four water maze quadrants
-    k = 1; area_a = 0;area_b = 0; area_c = 0;area_d = 0;
-    while k < rows_real
-        
-        if area(k) ==1
-            area_a = area_a +1;
-        elseif area(k) ==2
-            area_b = area_b +1;
-        elseif area(k) ==3
-            area_c = area_c +1;
-        elseif area(k) ==4
-            area_d = area_d +1;
-        end
-        k = k+1;
-    end
-    
-    % get relative amount of time spent in the four water maze quadrants
-    wm(n).area_a_rel = area_a/rows_real;
-    wm(n).area_b_rel = area_b/rows_real;
-    wm(n).area_c_rel = area_c/rows_real;
-    wm(n).area_d_rel = area_d/rows_real;
-    
-    % get time spent in the four water maze quadrants
-    wm(n).area_a_time = wm(n).area_a_rel*wm(n).duration_sec;
-    wm(n).area_b_time = wm(n).area_b_rel*wm(n).duration_sec;
-    wm(n).area_c_time = wm(n).area_c_rel*wm(n).duration_sec;
-    wm(n).area_d_time = wm(n).area_d_rel*wm(n).duration_sec;
-    
     % assorting datapoints to zones according radius
     k = 1; inzone = zeros(1,3);
     wallzone = 0; centerzone  = 0; annuluszone = 0;
