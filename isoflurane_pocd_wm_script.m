@@ -1,5 +1,6 @@
 % Script for analysing trajectory-data (x,y) acquired via video-tracking
 % in the water maze task to examine spatial memory performance
+
 % script based upon data analysis in Garthe A et al. 2009, PlosOne
 % "Adult-Generated Hippocampal Neurons Allow the Flexible Use of
 % Spatially Precise Learning Strategies"
@@ -15,6 +16,8 @@
 %          output-tables report the following measures:
 
 % @author D.Iggena (deetje.iggena@charite.de), @date: 02.05.2022
+% @update 16.10.2022: removed quadrant analysis
+% @last update 30.12.2022: new order, updated distance calculation
 
 clear; close all; clc; format compact;
 tic
@@ -157,7 +160,7 @@ for i = 1:length(foldercontent)
     wm(n).path_length = sum(path);
     
     % calculate path error
-    ideal_path       = wm_distance(start_x,goal_x,start_y,goal_y);
+    ideal_path       = wm_distance(x(1,1),gx,y(1,1),gy);
     wm(n).path_error = wm_accuracy(wm(n).path_length, ideal_path);
     
     % calculate velocity
@@ -167,8 +170,51 @@ for i = 1:length(foldercontent)
     wm(n).avg_distance_to_goal     = zeros(rows_real-1,1);
     wm(n).avg_distance_to_goal_old = zeros(rows_real-1,1);
     
-    [~, wm(n).avg_distance_to_goal]     = wm_distanceToXZ(x,y,gx,gy);
-    [~, wm(n).avg_distance_to_goal_old] = wm_distanceToXZ(x,y,gox,goy);
+    [~, wm(n).avg_distance_goal, distance]     = wm_distanceToXZ(x,y,gx,gy);
+    [~, wm(n).avg_distance_goal_old, distance_old] = wm_distanceToXZ(x,y,gox,goy);
+    
+    % get time in target area to analyze probe trial performance
+    k = 2; zone = 0; zoneEntry = 0; zone_old = 0; zone_old_Entry = 0;
+    platform_radius = 0.05;
+    
+    % assorting datapoints to target zone
+    distance = distance';
+    while k<rows_real
+        if distance(k,1)< platform_radius
+            zone = zone+1;
+            if distance(k-1,1)> platform_radius
+                zoneEntry = zoneEntry+1;
+            end
+        end
+        k = k+1;
+    end
+    
+    wm(n).zone_rel_5   = zone/rows_real;
+    wm(n).zone_time_5  = wm(n).zone_rel_5*wm(n).duration_sec;
+    wm(n).zone_entry_5 = zoneEntry;
+    
+    % assorting datapoints to old target zone
+    distance_old = distance_old'; k = 2;
+    while k<rows_real
+        if distance_old(k,1)< platform_radius
+            zone_old = zone_old+1;
+            if distance_old(k-1,1)> platform_radius
+                zone_old_Entry = zone_old_Entry+1;
+            end
+        end
+        k = k+1;
+    end
+    
+    wm(n).zone_old_rel_5   = zone_old/rows_real;
+    wm(n).zone_old_time_5  = wm(n).zone_old_rel_5*wm(n).duration_sec;
+    wm(n).zone_old_entry_5 = zone_old_Entry;
+    
+    % calculate surface coverage
+    wm(n).covsurface_rel = wm_surfaceCoverage(x,y);
+    
+    % get coordinates outside goal-directed corridor
+    phi = 40; %this defines the angle directed toward the goal
+    wm(n).outlier = wm_outlier(x,y,gx,gy,phi); % in percentage
     
     % calculate heading error and path efficiency
     [ wm(n).heading_error,  wm(n).path_efficiency, ~]    = ...
@@ -195,32 +241,6 @@ for i = 1:length(foldercontent)
     annulus_rel = annuluszone/rows_real;
     center_rel  = centerzone/rows_real;
     
-    % get time in target area to analyze probe trial performance
-    k = 2; zone = 0; zoneEntry = 0;
-    platform_radius = 0.05;
-    
-    % assorting datapoints to target zone
-    while k<rows_real
-        if avg_distance_to_goal(k,1)< platform_radius
-            zone = zone+1;
-            if avg_distance_to_goal(k-1,1)> platform_radius
-                zoneEntry = zoneEntry+1;
-            end
-        end
-        k = k+1;
-    end
-    
-    wm(n).zone_rel_5   = zone/rows_real;
-    wm(n).zone_time_5  = wm(n).zone_rel_5*wm(n).duration_sec;
-    wm(n).zone_entry_5 = zoneEntry;
-    
-    % calculate surface coverage
-    wm(n).covsurface_rel = wm_surfaceCoverage(x,y);
-    
-    % get coordinates outside goal-directed corridor
-    phi = 40; %this defines the angle directed toward the goal
-    wm(n).outlier = wm_outlier(x,y,gx,gy,phi); % in percentage
-    
     % calculate distance to point of gravity/centroid(=point of gravity, POG)
     xsum = sum(x); ysum = sum(y);
     pogx = xsum/rows_real;
@@ -234,7 +254,8 @@ for i = 1:length(foldercontent)
     
     % get search strategy (classification adapted from Garthe et al., 2009)
     [wm(n).strategy, wm(n).reference_frame] = wm_spatialStrategies(wm(n).path_error,...
-        wm(n).heading_error, avg_distance_pog,avg_distance_center, wm(n).avg_distance_goal,...
+        wm(n).heading_error, avg_distance_pog,avg_distance_center,...
+        wm(n).avg_distance_goal,...
         wm(n).avg_distance_goal_old, wm(n).outlier, annulus_rel,...
         wall_rel, wm(n).covsurface_rel, wm(n).day);
 
